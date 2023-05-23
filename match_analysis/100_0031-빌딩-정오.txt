@@ -1,0 +1,52 @@
+SIFT
+###################### KEYPOINT ######################
+[ WARN:0@0.017] global /Users/cbousseau/work/recipes/ci_py311/opencv-suite_1677933071594/work/opencv_contrib-4.6.0/modules/xfeatures2d/misc/python/shadow_sift.hpp (15) SIFT_create DEPRECATED: cv.xfeatures2d.SIFT_create() is deprecated due SIFT tranfer to the main repository. https://github.com/opencv/opencv/issues/16736
+ processing: 68/68
+total_time_keypoints: 2.5780587196350098 s
+###################### MATCH ######################
+processing:68/68
+total_time_match: 3.6121833324432373 s
+###################### INLIER ######################
+67/67
+total_time_inlier: 0.08056378364562988 s
+###################### MATCH_INFO ######################
+
+평균 Keypoint 수 :  3261.089552238806
+평균 tiepoint 수 :  1149.1194029850747
+평균 Inliner match 수:  784.6417910447761
+평균 영상 정합률: 0.35346806698442323  최대 :  0.5216736905478627
+평균 정상점 정합률: 0.6726435388193781  최대 :  0.8966861598440545
+
+KAZE
+###################### KEYPOINT ######################
+ processing: 68/68
+total_time_keypoints: 9.298280715942383 s
+###################### MATCH ######################
+processing:68/68
+total_time_match: 0.55413818359375 s
+###################### INLIER ######################
+67/67
+total_time_inlier: 0.08198237419128418 s
+###################### MATCH_INFO ######################
+평균 Keypoint 수 :  2357.3582089552237
+평균 tiepoint 수 :  1102.7611940298507
+평균 Inliner match 수:  960.0746268656717
+평균 영상 정합률: 0.46965177668001074  최대 :  0.7233289065958388
+평균 정상점 정합률: 0.8639634730556203  최대 :  0.9840881272949816
+
+ORB
+###################### KEYPOINT ######################
+ processing: 68/68
+total_time_keypoints: 0.6225759983062744 s
+###################### MATCH ######################
+processing:68/68
+total_time_match: 0.04413461685180664 s
+###################### INLIER ######################
+67/67
+total_time_inlier: 0.025834083557128906 s
+###################### MATCH_INFO ######################
+평균 Keypoint 수 :  500.0
+평균 tiepoint 수 :  208.1044776119403
+평균 Inliner match 수:  156.91044776119404
+평균 영상 정합률: 0.4162089552238805  최대 :  0.618
+평균 정상점 정합률: 0.7362810985320241  최대 :  0.9765100671140939

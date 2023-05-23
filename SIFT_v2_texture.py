@@ -4,6 +4,7 @@ import time
 import skimage.feature as feature
 import matplotlib.pyplot as plt
 import os
+import pickle
 
 
 
@@ -15,21 +16,25 @@ import os
 
 # Texture GLCM : https://ieeexplore.ieee.org/document/8600329/citations?tabFilter=papers#citations
 ########################## SETTINGS ###########################
-# PATH should be ONLY ENG and ends with "/"
+# IMG_PATH should be ONLY ENG and ends with "/"
 # Image folder path
-IMG_PATH = ''
+PKL_PATH = 'pkls/100_0032-운동장-오후/'
+IMG_PATH = 'dataset/100_0032-운동장-오후/'
 RESIZE = (700, 525)
-# SIFT, KAZE, ORB, FAST
-ALGO_TYPE = "SIFT"
+# SIFT, KAZE, ORB
+ALGO_TYPE = "KAZE"
 RANSAC = 100
 ################################################################
-
+try:
+    if not os.path.exists(PKL_PATH):
+                os.makedirs(PKL_PATH)
+except OSError:
+    print ('Error: Creating directory. ' +  PKL_PATH)
 
 ALGO = {
     "SIFT" : cv2.xfeatures2d.SIFT_create,
     "KAZE" : cv2.KAZE_create,
-    "ORB" : cv2.ORB
-    # Algo.FAST : cv2.FAst
+    "ORB" : cv2.ORB_create
 }
 
 LOSS_DISTANCE = {
@@ -54,7 +59,7 @@ def get_key_points(imageList:list):
         
 
         start_time = time.time()
-        kp, des = fe_algo.detactAndCompute(image, None)
+        kp, des = fe_algo.detectAndCompute(image, None)
 
         end_time = time.time()
         time_spend = end_time - start_time
@@ -68,7 +73,7 @@ def get_key_points(imageList:list):
         energy = feature.graycoprops(graycom, 'energy')
         correlation = feature.graycoprops(graycom, 'correlation')
         ASM = feature.graycoprops(graycom, 'ASM')
-
+        
 
         key_point = {
             'imageName' : image_path,
@@ -110,19 +115,20 @@ def run_matches(keypoints:list, match_order=None)->list:
                 imgName2 = next_keypoint["imageName"]
                 kp2 = next_keypoint['keyPoint']
                 des2 = next_keypoint['descriptor']
-                contrast2 = keypoint['contrast']
-                dissimilarity2 = keypoint['dissimilarity']
-                homogeneity2 = keypoint['homogeneity']
-                energy2 = keypoint['energy']
-                correlation2 = keypoint['correlation']
-                ASM2 = keypoint['ASM']    
+                contrast2 = next_keypoint['contrast']
+                dissimilarity2 = next_keypoint['dissimilarity']
+                homogeneity2 = next_keypoint['homogeneity']
+                energy2 = next_keypoint['energy']
+                correlation2 = next_keypoint['correlation']
+                ASM2 = next_keypoint['ASM']    
 
-                mean_contrast : (contrast1 + contrast2)/2
-                mean_dissimilarity : (dissimilarity1 + dissimilarity2)/2
-                mean_homogeneity : (homogeneity1 + homogeneity2)/2
-                mean_energy : (energy1 + energy2)/2
-                mean_correlation : (correlation1 + correlation2)/2
-                mean_ASM : (ASM1 + ASM2)/2
+                mean_contrast = (contrast1 + contrast2)/2
+                
+                mean_dissimilarity = (dissimilarity1 + dissimilarity2)/2
+                mean_homogeneity = (homogeneity1 + homogeneity2)/2
+                mean_energy = (energy1 + energy2)/2
+                mean_correlation = (correlation1 + correlation2)/2
+                mean_ASM = (ASM1 + ASM2)/2
 
                 bf = cv2.BFMatcher(LOSS_DISTANCE[ALGO_TYPE], crossCheck=True)
                 
@@ -154,7 +160,7 @@ def run_matches(keypoints:list, match_order=None)->list:
                 # print(f"#{index+1} match_count :{len(matches)}")
                 match_list.append(matchInfo)
 
-            return match_list, total_time
+    return match_list, total_time
 
 
 def get_inlier_matches(matchList):
@@ -192,8 +198,50 @@ def get_inlier_matches(matchList):
             matchList_inliers.append(matchInfo)
 
     return matchList_inliers,tt
+'''
 
-  
+matchInfo = {
+        "img1":imgName1,
+        "kp1":kp1,
+        "kp1_count":len(kp1),
+        "img2":imgName2,
+        "kp2":kp2,
+        "kp2_count":len(kp2),
+        "matches_count":len(matches),
+        "matches":matches,
+        "mean_contrast" : mean_contrast,
+        "mean_dissimilarity" : mean_dissimilarity,
+        "mean_homogeneity" : mean_homogeneity,
+        "mean_energy" : mean_energy,
+        "mean_correlation" : mean_correlation,
+        "mean_ASM" : mean_ASM,
+        "inliers": inliers,
+        "inliers_count" : len(inliers),
+    }
+'''
+def save_matchlist(matchList):   
+    save_arr = []
+    for matchInfo in matchList:
+        save_dict={
+            'kp1_count':matchInfo['kp1_count'],
+            'kp2_count':matchInfo['kp2_count'],
+            'matches_count':matchInfo['matches_count'],
+            'mean_contrast':matchInfo['mean_contrast'],
+            'mean_dissimilarity':matchInfo['mean_dissimilarity'],
+            'mean_homogeneity':matchInfo['mean_homogeneity'],
+            'mean_energy':matchInfo['mean_energy'],
+            'mean_correlation':matchInfo['mean_correlation'],
+            'mean_ASM':matchInfo['mean_ASM'],
+            'inliers_count':matchInfo['inliers_count']
+        }
+        save_arr.append(save_dict)
+    
+    
+
+    with open(f'{PKL_PATH+ALGO_TYPE}.pkl', 'wb') as f:
+        pickle.dump(save_arr, f)
+
+
 if __name__ == '__main__':
     
     DIR_LIST = os.listdir(IMG_PATH)
@@ -240,6 +288,7 @@ if __name__ == '__main__':
     for matchInfo in matchList_inliers:
         """
         matchInfo = {
+                    matchInfo = {
                     "img1":imgName1,
                     "kp1":kp1,
                     "kp1_count":len(kp1),
@@ -248,6 +297,12 @@ if __name__ == '__main__':
                     "kp2_count":len(kp2),
                     "matches_count":len(matches),
                     "matches":matches,
+                    "mean_contrast" : mean_contrast,
+                    "mean_dissimilarity" : mean_dissimilarity,
+                    "mean_homogeneity" : mean_homogeneity,
+                    "mean_energy" : mean_energy,
+                    "mean_correlation" : mean_correlation,
+                    "mean_ASM" : mean_ASM,
                     "inliers": inliers,
                     "inliers_count" : len(inliers),
                 }
@@ -287,4 +342,4 @@ if __name__ == '__main__':
     print("평균 Inliner match 수: ", inliers_count_sum/NUM_MATCHES)
     print("평균 영상 정합률:",matches_per_keypoint_list.mean()," 최대 : ",matches_per_keypoint_list.max())
     print("평균 정상점 정합률:",inliers_per_matches_list.mean(),' 최대 : ',inliers_per_matches_list.max())
-
+    save_matchlist(matchList_inliers)

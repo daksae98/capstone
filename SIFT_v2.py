@@ -2,14 +2,14 @@ import cv2
 import numpy as np
 import time
 import os
-
+import csv
 ########################## SETTINGS ###########################
 # PATH should be ONLY ENG and ends with "/"
 # Image folder path
-IMG_PATH = ''
+IMG_PATH = 'dataset/100_0033-빌딩-오후/'
 RESIZE = (700, 525)
-# SIFT, KAZE, ORB, FAST
-ALGO_TYPE = "SIFT"
+# SIFT, KAZE, ORB,
+ALGO_TYPE = "ORB"
 RANSAC = 100
 ################################################################
 
@@ -17,8 +17,7 @@ RANSAC = 100
 ALGO = {
     "SIFT" : cv2.xfeatures2d.SIFT_create,
     "KAZE" : cv2.KAZE_create,
-    "ORB" : cv2.ORB
-    # Algo.FAST : cv2.FAst
+    "ORB" : cv2.ORB_create
 }
 
 LOSS_DISTANCE = {
@@ -43,7 +42,7 @@ def get_key_points(imageList:list):
         
 
         start_time = time.time()
-        kp, des = fe_algo.detactAndCompute(image, None)
+        kp, des = fe_algo.detectAndCompute(image, None)
 
         end_time = time.time()
         time_spend = end_time - start_time
@@ -108,7 +107,7 @@ def run_matches(keypoints:list, match_order=None)->list:
                 # print(f"#{index+1} match_count :{len(matches)}")
                 match_list.append(matchInfo)
 
-            return match_list, total_time
+    return match_list, total_time
 
 
 def get_inlier_matches(matchList):
@@ -241,3 +240,10 @@ if __name__ == '__main__':
     print("평균 Inliner match 수: ", inliers_count_sum/NUM_MATCHES)
     print("평균 영상 정합률:",matches_per_keypoint_list.mean()," 최대 : ",matches_per_keypoint_list.max())
     print("평균 정상점 정합률:",inliers_per_matches_list.mean(),' 최대 : ',inliers_per_matches_list.max())
+
+    name = IMG_PATH.split('/')[1]
+    f = open(f'csvs/{name}.csv','a', newline='')
+    wr = csv.writer(f)
+    wr.writerow([f'{ALGO_TYPE}_시간', '평균 정상점 정합률', '최대 정상점 정합률','평균 Inlier match 수','평균 영상 정합률','평균 tiepoint 수','평균 keypoint 수'])
+    wr.writerow([total_time_keypoints+total_time_match+tt,inliers_per_matches_list.mean(),inliers_per_matches_list.max(),inliers_count_sum/NUM_MATCHES,matches_per_keypoint_list.mean(),matches_count_sum/NUM_MATCHES,keypoint_count_sum/NUM_MATCHES ])
+    f.close()
