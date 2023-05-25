@@ -3,6 +3,7 @@ import numpy as np
 import time
 import os
 import csv
+import pickle
 ########################## SETTINGS ###########################
 # PATH should be ONLY ENG and ends with "/"
 # Image folder path
@@ -66,6 +67,8 @@ def run_matches(keypoints:list, match_order=None)->list:
     total_time = 0
     keypoints_length = len(keypoints)
     if match_order:
+        #  with open(f'{PKL_PATH+algo}.pkl', 'rb') as f:
+        #     pkl = pickle.load(f)
         pass
     else:
         for index,keypoint in enumerate(keypoints):

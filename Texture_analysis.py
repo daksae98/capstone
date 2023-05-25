@@ -1,7 +1,7 @@
 import numpy as np
 import pickle
 import matplotlib.pyplot as plt
-import os
+
 '''
 for index,matchInfo in enumerate(pkl):
     kp1_count=matchInfo['kp1_count'],
@@ -17,7 +17,6 @@ for index,matchInfo in enumerate(pkl):
     
     print(f'{index}/{len(pkl)} : mean_contrast : {(matchInfo)}')
 '''
-MERGE_PKL_PATH = 'pkls/merged/'
 PKL_PATH = 'pkls/merged/'
 ALGO_TYPES = ['KAZE','ORB','SIFT']
 PLOT_COLORS = {
@@ -122,33 +121,6 @@ def subplot_algo_xlabel_ratio(xlabel_list):
 
 
 
-def merge_pkls():
-    try:
-        if not os.path.exists(MERGE_PKL_PATH):
-                os.makedirs(MERGE_PKL_PATH)
-    except OSError:
-        print ('Error: Creating directory. ' +  MERGE_PKL_PATH)
-    dir_list = os.listdir('pkls')
-    merge_pkl = {
-        'KAZE' :[],
-        'ORB' : [],
-        'SIFT' : [],
-    }
-
-    for directory in dir_list:
-        for algo in ALGO_TYPES:
-            if f'pkls/{directory}/' == MERGE_PKL_PATH:
-                    continue
-            with open(f'pkls/{directory}/{algo}.pkl','rb') as f:
-                pkl = pickle.load(f)
-                merge_pkl[algo] = merge_pkl[algo] + pkl
-                print(len(pkl))
-
-    print(len(merge_pkl['KAZE']))
-    for algo in ALGO_TYPES:
-        with open(f'{MERGE_PKL_PATH+algo}.pkl', 'wb') as f:
-            pickle.dump(merge_pkl[algo], f)
-
 def analysis_images():
     # 영상 별 평균 GLCM 통계값
     stats = [
@@ -173,8 +145,8 @@ def analysis_images():
 
 if __name__ == '__main__':
     lable_list = [
-    ('mean_contrast','inliers_count'),
-    ('mean_energy','inliers_count'),
+    ('mean_contrast','kp2_count'),
+    ('mean_energy','kp1_count'),
     # ('mean_correlation','inliers_count'),
     # ('mean_ASM','inliers_count'),
     # ('mean_dissimilarity','inliers_count'),
@@ -188,7 +160,6 @@ if __name__ == '__main__':
     ]
     # subplot_algo_xlabel_ratio(xlable_list)
     # subplot_algo_xlabel_ylabel(lable_list)
-    # merge_pkls()
     # analysis_images()
     plot_algo_xlabel_ylabel('mean_contrast','inliers_count')
-    plot_algo_xlabel_ratio('mean_contrast')
+    # plot_algo_xlabel_ratio('mean_contrast')

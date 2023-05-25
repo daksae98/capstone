@@ -5,7 +5,7 @@ import skimage.feature as feature
 import matplotlib.pyplot as plt
 import os
 import pickle
-
+import csv
 
 
 ##### TODO ######
@@ -22,9 +22,10 @@ PKL_PATH = 'pkls/100_0032-운동장-오후/'
 IMG_PATH = 'dataset/100_0032-운동장-오후/'
 RESIZE = (700, 525)
 # SIFT, KAZE, ORB
-ALGO_TYPE = "KAZE"
+ALGO_TYPE = "ORB"
 RANSAC = 100
 ################################################################
+
 try:
     if not os.path.exists(PKL_PATH):
                 os.makedirs(PKL_PATH)
@@ -94,8 +95,73 @@ def run_matches(keypoints:list, match_order=None)->list:
     match_list = []
     total_time = 0
     keypoints_length = len(keypoints)
+    img_name = IMG_PATH.split('/')[1]
     if match_order:
-        pass
+        with open(f'pkls/match-order/{img_name}.pkl', 'rb') as f:
+            order = pickle.load(f)
+        for index,(i,j) in enumerate(order):
+            print(f'\rprocessing:{index+1}/{len(order)}',end='')
+            keypoint = keypoints[i]
+            next_keypoint = keypoints[j]
+
+            imgName1 = keypoint["imageName"]
+            kp1 = keypoint['keyPoint']
+            des1 = keypoint['descriptor']
+            contrast1 = keypoint['contrast']
+            dissimilarity1 = keypoint['dissimilarity']
+            homogeneity1 = keypoint['homogeneity']
+            energy1 = keypoint['energy']
+            correlation1 = keypoint['correlation']
+            ASM1 = keypoint['ASM']
+            
+            imgName2 = next_keypoint["imageName"]
+            kp2 = next_keypoint['keyPoint']
+            des2 = next_keypoint['descriptor']
+            contrast2 = next_keypoint['contrast']
+            dissimilarity2 = next_keypoint['dissimilarity']
+            homogeneity2 = next_keypoint['homogeneity']
+            energy2 = next_keypoint['energy']
+            correlation2 = next_keypoint['correlation']
+            ASM2 = next_keypoint['ASM']    
+
+            mean_contrast = (contrast1 + contrast2)/2
+            
+            mean_dissimilarity = (dissimilarity1 + dissimilarity2)/2
+            mean_homogeneity = (homogeneity1 + homogeneity2)/2
+            mean_energy = (energy1 + energy2)/2
+            mean_correlation = (correlation1 + correlation2)/2
+            mean_ASM = (ASM1 + ASM2)/2
+
+            bf = cv2.BFMatcher(LOSS_DISTANCE[ALGO_TYPE], crossCheck=True)
+            
+            start_time = time.time() 
+                                            
+            matches = bf.match(des1, des2)
+
+            end_time = time.time() 
+
+            time_spend = end_time - start_time
+            total_time = total_time + time_spend
+
+            matchInfo = {
+                "img1":imgName1,
+                "kp1":kp1,
+                "kp1_count":len(kp1),
+                "img2":imgName2,
+                "kp2":kp2,
+                "kp2_count":len(kp2),
+                "matches_count":len(matches),
+                "matches":matches,
+                "mean_contrast" : mean_contrast,
+                "mean_dissimilarity" : mean_dissimilarity,
+                "mean_homogeneity" : mean_homogeneity,
+                "mean_energy" : mean_energy,
+                "mean_correlation" : mean_correlation,
+                "mean_ASM" : mean_ASM,
+            }
+            # print(f"#{index+1} match_count :{len(matches)}")
+            match_list.append(matchInfo)
+
     else:
         for index,keypoint in enumerate(keypoints):
             print(f'\rprocessing:{index+1}/{keypoints_length}',end='')
@@ -235,15 +301,13 @@ def save_matchlist(matchList):
             'inliers_count':matchInfo['inliers_count']
         }
         save_arr.append(save_dict)
-    
-    
 
     with open(f'{PKL_PATH+ALGO_TYPE}.pkl', 'wb') as f:
         pickle.dump(save_arr, f)
 
 
 if __name__ == '__main__':
-    
+    name = IMG_PATH.split('/')[1]
     DIR_LIST = os.listdir(IMG_PATH)
     IMAGE_LIST = []
     
@@ -257,9 +321,8 @@ if __name__ == '__main__':
     print("\n###################### KEYPOINT ######################\n")
     keypointList,total_time_keypoints = get_key_points(IMAGE_LIST)
     print("\ntotal_time_keypoints:",total_time_keypoints,"s")
-
     print("\n###################### MATCH ######################\n")
-    matchList,total_time_match = run_matches(keypointList)
+    matchList,total_time_match = run_matches(keypointList,True)
     print("\ntotal_time_match:",total_time_match,"s")
 
     print("\n###################### INLIER ######################\n")
@@ -285,7 +348,14 @@ if __name__ == '__main__':
     inliers_count_sum = 0
     matches_per_keypoint_list = []
     inliers_per_matches_list = []
+    f = open(f'csvs/{name+ALGO_TYPE}.csv','a', newline='')
+    wr = csv.writer(f)
+    wr.writerow([f'{ALGO_TYPE}_총시간', 'ip / tp','Inlier match count','tp / kp','tiepoint count','keypoint'])
     for matchInfo in matchList_inliers:
+        
+    
+    
+        
         """
         matchInfo = {
                     matchInfo = {
@@ -327,9 +397,11 @@ if __name__ == '__main__':
 
         matches_per_keypoint_list.append(matches_per_keypoint)
         inliers_per_matches_list.append(inliers_per_matches)
-
-
+        #'{ALGO_TYPE}_총시간', 'ip / tp','Inlier match count','tp / kp','tiepoint count','keypoint'
+        wr.writerow([total_time_keypoints+total_time_match+tt, inliers_per_matches,inliers_count, matches_per_keypoint, matches_count,keypoint_count ])
         # print(f"{imgName1} & {imgName2}\nmatches_count: {matches_count}\ninliers_count: {inliers_count}\n영상 정합률:{matches_per_keypoint}\n정상점 정합률:{inliers_per_matches}\n\n")
+    
+    f.close()
 
     matches_per_keypoint_list = np.array(matches_per_keypoint_list)
     inliers_per_matches_list = np.array(inliers_per_matches_list)
@@ -343,3 +415,12 @@ if __name__ == '__main__':
     print("평균 영상 정합률:",matches_per_keypoint_list.mean()," 최대 : ",matches_per_keypoint_list.max())
     print("평균 정상점 정합률:",inliers_per_matches_list.mean(),' 최대 : ',inliers_per_matches_list.max())
     save_matchlist(matchList_inliers)
+
+    
+    f = open(f'csvs/{name}.csv','a', newline='')
+    wr = csv.writer(f)
+    wr.writerow([f'{ALGO_TYPE}_시간', '평균 정상점 정합률', '최대 정상점 정합률','평균 Inlier match 수','평균 영상 정합률','평균 tiepoint 수','평균 keypoint 수'])
+    wr.writerow([total_time_keypoints+total_time_match+tt,inliers_per_matches_list.mean(),inliers_per_matches_list.max(),inliers_count_sum/NUM_MATCHES,matches_per_keypoint_list.mean(),matches_count_sum/NUM_MATCHES,keypoint_count_sum/NUM_MATCHES ])
+    f.close()
+
+    
